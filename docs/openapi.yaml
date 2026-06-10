@@ -1,0 +1,462 @@
+openapi: 3.1.0
+info:
+  title: Plataforma de Treino de Xadrez
+  description: API REST de uma plataforma de treino de xadrez contra um bot.
+  version: 0.1.0
+paths:
+  /v1/games:
+    post:
+      tags:
+      - partidas
+      summary: Cria uma nova partida contra o bot
+      operationId: criar_partida_v1_games_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CriarPartidaRequest'
+        required: true
+      responses:
+        '201':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartidaView'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/games/{id_partida}:
+    get:
+      tags:
+      - partidas
+      summary: Consulta o estado de uma partida
+      operationId: obter_partida_v1_games__id_partida__get
+      parameters:
+      - name: id_partida
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Id Partida
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartidaView'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/games/{id_partida}/moves:
+    get:
+      tags:
+      - partidas
+      summary: Lista os lances já jogados
+      operationId: listar_lances_v1_games__id_partida__moves_get
+      parameters:
+      - name: id_partida
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Id Partida
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                title: Response Listar Lances V1 Games  Id Partida  Moves Get
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+    post:
+      tags:
+      - partidas
+      summary: Aplica um lance do humano (o bot responde)
+      operationId: aplicar_lance_v1_games__id_partida__moves_post
+      parameters:
+      - name: id_partida
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Id Partida
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LanceRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResultadoLanceView'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/games/{id_partida}/undo:
+    post:
+      tags:
+      - partidas
+      summary: Desfaz a última jogada
+      operationId: desfazer_v1_games__id_partida__undo_post
+      parameters:
+      - name: id_partida
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Id Partida
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartidaView'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/games/{id_partida}/redo:
+    post:
+      tags:
+      - partidas
+      summary: Refaz a última jogada desfeita
+      operationId: refazer_v1_games__id_partida__redo_post
+      parameters:
+      - name: id_partida
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Id Partida
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PartidaView'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /v1/games/{id_partida}/analysis:
+    post:
+      tags:
+      - partidas
+      summary: Explora uma linha hipotética ('e se?') sem afetar a partida
+      operationId: analisar_v1_games__id_partida__analysis_post
+      parameters:
+      - name: id_partida
+        in: path
+        required: true
+        schema:
+          type: string
+          title: Id Partida
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnaliseRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnaliseView'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPValidationError'
+  /health:
+    get:
+      tags:
+      - infra
+      summary: Health
+      description: Sinaliza que o servidor está no ar.
+      operationId: health_health_get
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                additionalProperties:
+                  type: string
+                type: object
+                title: Response Health Health Get
+components:
+  schemas:
+    AnaliseRequest:
+      properties:
+        lances:
+          items:
+            $ref: '#/components/schemas/LanceRequest'
+          type: array
+          title: Lances
+          description: Sequência hipotética de lances a aplicar sobre a posição atual.
+      type: object
+      title: AnaliseRequest
+      description: 'Corpo de POST /games/{id}/analysis: a linha hipotética a explorar.'
+    AnaliseView:
+      properties:
+        fen:
+          type: string
+          title: Fen
+        vez:
+          type: string
+          title: Vez
+        estado:
+          $ref: '#/components/schemas/EstadoView'
+        historico:
+          items:
+            type: string
+          type: array
+          title: Historico
+        lance_sugerido:
+          anyOf:
+          - $ref: '#/components/schemas/LanceView'
+          - type: 'null'
+      type: object
+      required:
+      - fen
+      - vez
+      - estado
+      - historico
+      title: AnaliseView
+      description: 'Resposta de POST /games/{id}/analysis: a posição hipotética e
+        a sugestão.'
+    CriarPartidaRequest:
+      properties:
+        nivel_bot:
+          type: string
+          title: Nivel Bot
+          description: Nível do bot adversário.
+          examples:
+          - aleatorio
+          - guloso
+          - minimax
+        cor_humano:
+          type: string
+          title: Cor Humano
+          description: Cor controlada pelo humano ('branca' ou 'preta').
+          default: branca
+      type: object
+      required:
+      - nivel_bot
+      title: CriarPartidaRequest
+      description: Corpo de POST /games.
+    EstadoView:
+      properties:
+        nome:
+          type: string
+          title: Nome
+        descricao:
+          type: string
+          title: Descricao
+        terminada:
+          type: boolean
+          title: Terminada
+        em_xeque:
+          type: boolean
+          title: Em Xeque
+        resultado:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Resultado
+      type: object
+      required:
+      - nome
+      - descricao
+      - terminada
+      - em_xeque
+      title: EstadoView
+      description: O estado da partida (padrão State) exposto na resposta.
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          type: array
+          title: Detail
+      type: object
+      title: HTTPValidationError
+    LanceRequest:
+      properties:
+        origem:
+          type: string
+          title: Origem
+          description: 'Casa de origem, ex.: ''e2''.'
+          examples:
+          - e2
+        destino:
+          type: string
+          title: Destino
+          description: 'Casa de destino, ex.: ''e4''.'
+          examples:
+          - e4
+        promocao:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Promocao
+          description: Símbolo da peça promovida (Q, R, B, N), só em promoção de peão.
+      type: object
+      required:
+      - origem
+      - destino
+      title: LanceRequest
+      description: Um lance pedido, em coordenadas algébricas.
+    LanceView:
+      properties:
+        origem:
+          type: string
+          title: Origem
+        destino:
+          type: string
+          title: Destino
+        promocao:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Promocao
+        notacao:
+          type: string
+          title: Notacao
+          description: 'Forma compacta, ex.: ''e2e4'' ou ''a7a8=Q''.'
+      type: object
+      required:
+      - origem
+      - destino
+      - notacao
+      title: LanceView
+      description: Representação de um lance na resposta.
+    PartidaView:
+      properties:
+        id:
+          type: string
+          title: Id
+        fen:
+          type: string
+          title: Fen
+        vez:
+          type: string
+          title: Vez
+        estado:
+          $ref: '#/components/schemas/EstadoView'
+        historico:
+          items:
+            type: string
+          type: array
+          title: Historico
+          description: Lances jogados, em notação compacta.
+        lances_legais:
+          items:
+            $ref: '#/components/schemas/LanceView'
+          type: array
+          title: Lances Legais
+        pode_desfazer:
+          type: boolean
+          title: Pode Desfazer
+        pode_refazer:
+          type: boolean
+          title: Pode Refazer
+        nivel_bot:
+          type: string
+          title: Nivel Bot
+        cor_bot:
+          type: string
+          title: Cor Bot
+        cor_humano:
+          type: string
+          title: Cor Humano
+      type: object
+      required:
+      - id
+      - fen
+      - vez
+      - estado
+      - historico
+      - lances_legais
+      - pode_desfazer
+      - pode_refazer
+      - nivel_bot
+      - cor_bot
+      - cor_humano
+      title: PartidaView
+      description: Fotografia completa de uma partida para a interface.
+    ResultadoLanceView:
+      properties:
+        partida:
+          $ref: '#/components/schemas/PartidaView'
+        lance_humano:
+          $ref: '#/components/schemas/LanceView'
+        lance_bot:
+          anyOf:
+          - $ref: '#/components/schemas/LanceView'
+          - type: 'null'
+      type: object
+      required:
+      - partida
+      - lance_humano
+      title: ResultadoLanceView
+      description: 'Resposta de POST /games/{id}/moves: o lance do humano e a resposta
+        do bot.'
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          type: array
+          title: Location
+        msg:
+          type: string
+          title: Message
+        type:
+          type: string
+          title: Error Type
+        input:
+          title: Input
+        ctx:
+          type: object
+          title: Context
+      type: object
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
